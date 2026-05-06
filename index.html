@@ -1,0 +1,448 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=no">
+<meta name="theme-color" content="#2d6be4">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+<meta name="apple-mobile-web-app-title" content="えらカード">
+<link rel="manifest" href="manifest.json">
+<link rel="apple-touch-icon" href="icon-192.png">
+<title>えらポイントカード</title>
+<style>
+  @import url('https://fonts.googleapis.com/css2?family=Nunito:wght@700;900&display=swap');
+
+  * { margin: 0; padding: 0; box-sizing: border-box; -webkit-tap-highlight-color: transparent; }
+
+  body {
+    background: #e8f0fe;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    padding: env(safe-area-inset-top, 16px) 12px 24px;
+    min-height: 100vh;
+    font-family: 'Nunito', sans-serif;
+    gap: 14px;
+  }
+
+  /* ── Save indicator ── */
+  .save-toast {
+    position: fixed;
+    bottom: 24px;
+    left: 50%;
+    transform: translateX(-50%) translateY(60px);
+    background: #1a4fc4;
+    color: #fff;
+    font-size: 12px;
+    font-weight: 700;
+    padding: 8px 20px;
+    border-radius: 99px;
+    box-shadow: 0 4px 16px rgba(0,0,0,0.2);
+    transition: transform 0.3s ease;
+    z-index: 9999;
+    white-space: nowrap;
+  }
+  .save-toast.show { transform: translateX(-50%) translateY(0); }
+
+  /* ── Card ── */
+  .card {
+    width: min(378px, 100%);
+    background: #fff;
+    border-radius: 10px;
+    overflow: hidden;
+    box-shadow: 0 6px 32px rgba(0,80,200,0.15), 0 2px 8px rgba(0,0,0,0.08);
+    border: 3px solid #2d6be4;
+  }
+
+  /* ── Header ── */
+  .header {
+    background: linear-gradient(135deg, #1a4fc4 0%, #2d6be4 55%, #0ea5e9 100%);
+    padding: 8px 14px 7px;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: 5px;
+    position: relative;
+    overflow: hidden;
+  }
+  .header::before {
+    content: '';
+    position: absolute;
+    top: -20px; right: -20px;
+    width: 80px; height: 80px;
+    background: rgba(255,255,255,0.08);
+    border-radius: 50%;
+  }
+  .title-block h1 {
+    color: #fff;
+    font-size: 16px;
+    font-weight: 900;
+    letter-spacing: 1.5px;
+    text-shadow: 0 1px 4px rgba(0,0,0,0.2);
+    white-space: nowrap;
+    display: flex;
+    align-items: center;
+    gap: 4px;
+  }
+  .header-right {
+    display: flex;
+    align-items: center;
+    gap: 5px;
+    background: rgba(255,255,255,0.18);
+    border-radius: 6px;
+    padding: 3px 8px;
+    width: 67%;
+  }
+  .field-label {
+    color: rgba(255,255,255,0.9);
+    font-size: 10px;
+    font-weight: 700;
+    white-space: nowrap;
+  }
+  .field-input {
+    flex: 1;
+    min-width: 0;
+    background: transparent;
+    border: none;
+    border-bottom: 1.5px dashed rgba(255,255,255,0.7);
+    color: #fff;
+    font-family: inherit;
+    font-size: 11px;
+    font-weight: 700;
+    outline: none;
+    padding: 1px 3px;
+  }
+  .field-input::placeholder { color: rgba(255,255,255,0.4); }
+
+  /* ── Progress bar ── */
+  .progress-section {
+    background: #dce8ff;
+    padding: 4px 12px;
+    display: flex;
+    align-items: center;
+    gap: 8px;
+  }
+  .progress-label { font-size: 9px; font-weight: 700; color: #2d6be4; white-space: nowrap; }
+  .progress-bar-bg { flex: 1; height: 8px; background: #b8cef7; border-radius: 99px; overflow: hidden; }
+  .progress-bar-fill {
+    height: 100%; width: 0%;
+    background: linear-gradient(90deg, #2d6be4, #0ea5e9);
+    border-radius: 99px;
+    transition: width 0.4s ease;
+  }
+  .progress-num { font-size: 9px; font-weight: 900; color: #1a4fc4; white-space: nowrap; min-width: 34px; text-align: right; }
+
+  /* ── Stamp grid ── */
+  .grid-section { padding: 8px 10px 6px; }
+  .grid {
+    display: grid;
+    grid-template-columns: repeat(10, 1fr);
+    grid-template-rows: repeat(5, 32px);
+    gap: 3px;
+  }
+
+  .stamp {
+    width: 100%;
+    height: 32px;
+    border-radius: 5px;
+    border: 1.5px dashed #b8cef7;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    cursor: pointer;
+    transition: transform 0.12s, border-color 0.12s, background 0.12s, opacity 0.12s;
+    position: relative;
+    background: #f4f8ff;
+    user-select: none;
+    overflow: hidden;
+  }
+  .stamp.locked { opacity: 0.32; cursor: not-allowed; border-style: dotted; border-color: #cddaf5; }
+  .stamp.locked:hover { transform: none !important; }
+  .stamp:not(.locked):not(.filled):hover { transform: scale(1.08); border-color: #2d6be4; background: #eef3ff; }
+  .stamp.filled {
+    border: 1.5px solid #2d6be4;
+    background: linear-gradient(135deg, #e8f0fe, #d4e3ff);
+    animation: pop 0.25s cubic-bezier(.36,1.5,.5,1) forwards;
+  }
+  @keyframes pop { 0% { transform: scale(0.4); } 100% { transform: scale(1); } }
+  .stamp.milestone { border-color: #f59e0b; background: #fffbeb; }
+  .stamp.milestone.filled { background: linear-gradient(135deg, #fef3c7, #fde68a); border-color: #f59e0b; }
+
+  .stamp .emoji {
+    position: absolute; top: 50%; left: 50%;
+    transform: translate(-50%, -50%);
+    font-size: 14px; line-height: 1; pointer-events: none;
+  }
+  .stamp-num {
+    position: absolute; bottom: 1px; right: 2px;
+    font-size: 6px; color: #a0b4d8; font-weight: 700; line-height: 1; pointer-events: none;
+  }
+  .stamp.filled    .stamp-num { color: #2d6be4; }
+  .stamp.milestone .stamp-num { color: #f59e0b; }
+  .stamp.locked    .stamp-num { color: #c8d8f0; }
+
+  /* ── Footer ── */
+  .footer {
+    background: linear-gradient(135deg, #fef3c7, #fde68a);
+    border-top: 2px solid #fbbf24;
+    padding: 6px 12px;
+    display: flex; align-items: center; gap: 8px;
+  }
+  .trophy { font-size: 18px; flex-shrink: 0; }
+  .reward-label-text { font-size: 10px; font-weight: 900; color: #92400e; white-space: nowrap; flex-shrink: 0; }
+  .reward-input {
+    flex: 1; min-width: 0;
+    background: rgba(255,255,255,0.55);
+    border: none; border-bottom: 1.5px dashed #fbbf24;
+    border-radius: 3px 3px 0 0;
+    color: #92400e; font-family: inherit; font-size: 11px; font-weight: 700;
+    outline: none; padding: 2px 4px;
+  }
+  .reward-input::placeholder { color: #d9a843; }
+
+  /* ── Controls ── */
+  .controls { display: flex; gap: 10px; justify-content: center; flex-wrap: wrap; }
+  .btn {
+    padding: 10px 22px; border-radius: 99px; border: none;
+    cursor: pointer; font-family: inherit; font-size: 14px; font-weight: 700;
+    transition: transform 0.1s; touch-action: manipulation;
+  }
+  .btn:active { transform: scale(0.95); }
+  .btn-primary { background: linear-gradient(135deg, #2d6be4, #0ea5e9); color: #fff; box-shadow: 0 3px 10px rgba(45,107,228,0.35); }
+  .btn-reset   { background: #f1f5f9; color: #64748b; }
+  .btn-print   { background: linear-gradient(135deg, #059669, #10b981); color: #fff; box-shadow: 0 3px 10px rgba(5,150,105,0.3); }
+
+  /* ── Celebrate ── */
+  .celebrate {
+    display: none; position: fixed; inset: 0;
+    background: rgba(0,0,0,0.55);
+    justify-content: center; align-items: center;
+    z-index: 999; backdrop-filter: blur(3px);
+  }
+  .celebrate.show { display: flex; }
+  .celebrate-box {
+    background: #fff; border-radius: 24px; padding: 36px 44px;
+    text-align: center; box-shadow: 0 20px 60px rgba(0,0,0,0.3);
+    animation: bounce-in 0.4s cubic-bezier(.36,1.5,.5,1); max-width: 300px;
+  }
+  @keyframes bounce-in { from { transform: scale(0.5); opacity: 0; } to { transform: scale(1); opacity: 1; } }
+  .celebrate-emoji { font-size: 72px; }
+  .celebrate-box h2 { font-size: 24px; color: #1a4fc4; margin: 10px 0 8px; font-weight: 900; }
+  .celebrate-box p  { font-size: 14px; color: #64748b; font-weight: 700; }
+  .celebrate-box .btn { margin-top: 18px; padding: 10px 30px; font-size: 14px; }
+
+  @media print {
+    @page { size: 100mm 148mm; margin: 0; }
+    body { background: white; padding: 0; display: block; }
+    .controls, .celebrate, .save-toast { display: none !important; }
+    .card { width: 100mm; border-radius: 0; box-shadow: none; border: none; }
+    .stamp { cursor: default; }
+    .stamp.locked { opacity: 1; }
+  }
+</style>
+</head>
+<body>
+
+<div class="card">
+  <div class="header">
+    <div class="title-block">
+      <h1><span>🚒</span>えらポイントカード<span>🚓</span></h1>
+    </div>
+    <div class="header-right">
+      <span class="field-label">なまえ：</span>
+      <input class="field-input" id="nameInput" type="text" placeholder="ここにかいてね" maxlength="16">
+    </div>
+  </div>
+
+  <div class="progress-section">
+    <span class="progress-label">🎯 しんちょく</span>
+    <div class="progress-bar-bg">
+      <div class="progress-bar-fill" id="progressFill"></div>
+    </div>
+    <span class="progress-num" id="progressNum">0 / 50</span>
+  </div>
+
+  <div class="grid-section">
+    <div class="grid" id="stampGrid"></div>
+  </div>
+
+  <div class="footer">
+    <div class="trophy">🏆</div>
+    <span class="reward-label-text">ごほうび：</span>
+    <input class="reward-input" id="rewardInput" type="text" placeholder="ここにかいてね" maxlength="20">
+  </div>
+</div>
+
+<div class="controls">
+  <button class="btn btn-primary" onclick="addStamp()">＋ ポイント！</button>
+  <button class="btn btn-reset"   onclick="resetCard()">リセット</button>
+  <button class="btn btn-print"   onclick="window.print()">🖨️ 印刷</button>
+</div>
+
+<div class="celebrate" id="celebrate">
+  <div class="celebrate-box">
+    <div class="celebrate-emoji">😊</div>
+    <h2>やったー！！</h2>
+    <p>50こ ぜんぶ あつまったよ！<br>すごい！！ごほうびだー！</p>
+    <button class="btn btn-primary" onclick="closeCelebrate()">もどる</button>
+  </div>
+</div>
+
+<div class="save-toast" id="saveToast">💾 じどうほぞんしました</div>
+
+<script>
+  const vehicleEmojis = ['🚒','🚑','🚓','🚜','🏗️','🚛','🚌','🚂','🚁','🛻','🚧','🛳️','🚨','🛞','🚐','🏎️','🚜','🚑'];
+  const TOTAL = 50;
+  const milestones = new Set([10, 20, 30, 40, 50]);
+  let filled = 0;
+  let saveTimer = null;
+
+  // ── LocalStorage keys ──
+  const KEY_FILLED  = 'eracard_filled';
+  const KEY_NAME    = 'eracard_name';
+  const KEY_REWARD  = 'eracard_reward';
+
+  function saveState() {
+    try {
+      localStorage.setItem(KEY_FILLED, filled);
+      localStorage.setItem(KEY_NAME,   document.getElementById('nameInput').value);
+      localStorage.setItem(KEY_REWARD, document.getElementById('rewardInput').value);
+      showToast();
+    } catch(e) {}
+  }
+
+  function loadState() {
+    try {
+      const savedFilled = parseInt(localStorage.getItem(KEY_FILLED) || '0');
+      const savedName   = localStorage.getItem(KEY_NAME)   || '';
+      const savedReward = localStorage.getItem(KEY_REWARD) || '';
+      document.getElementById('nameInput').value   = savedName;
+      document.getElementById('rewardInput').value = savedReward;
+      // restore stamps silently
+      for (let i = 1; i <= savedFilled; i++) {
+        const el = document.getElementById('stamp-' + i);
+        if (!el) continue;
+        el.classList.remove('locked');
+        el.classList.add('filled');
+        const emojiEl = document.createElement('span');
+        emojiEl.className = 'emoji';
+        emojiEl.textContent = getEmoji(i);
+        el.insertBefore(emojiEl, el.firstChild);
+        if (i < TOTAL) document.getElementById('stamp-' + (i + 1)).classList.remove('locked');
+      }
+      filled = savedFilled;
+      updateUI();
+    } catch(e) {}
+  }
+
+  function showToast() {
+    const t = document.getElementById('saveToast');
+    t.classList.add('show');
+    clearTimeout(saveTimer);
+    saveTimer = setTimeout(() => t.classList.remove('show'), 1800);
+  }
+
+  function buildGrid() {
+    const grid = document.getElementById('stampGrid');
+    grid.innerHTML = '';
+    for (let i = 1; i <= TOTAL; i++) {
+      const cell = document.createElement('div');
+      cell.className = 'stamp'
+        + (milestones.has(i) ? ' milestone' : '')
+        + (i === 1 ? '' : ' locked');
+      cell.id = 'stamp-' + i;
+      cell.onclick = () => handleClick(i);
+      const num = document.createElement('span');
+      num.className = 'stamp-num';
+      num.textContent = i;
+      cell.appendChild(num);
+      grid.appendChild(cell);
+    }
+  }
+
+  function getEmoji(i) {
+    if (milestones.has(i)) return '⭐';
+    return vehicleEmojis[(i - 1) % vehicleEmojis.length];
+  }
+
+  function handleClick(i) {
+    const el = document.getElementById('stamp-' + i);
+    if (el.classList.contains('locked')) return;
+    if (el.classList.contains('filled')) {
+      if (i !== filled) return;
+      removeStamp(i);
+    } else {
+      if (i !== filled + 1) return;
+      addStampAt(i);
+    }
+  }
+
+  function addStampAt(i) {
+    const el = document.getElementById('stamp-' + i);
+    el.classList.add('filled');
+    const emojiEl = document.createElement('span');
+    emojiEl.className = 'emoji';
+    emojiEl.textContent = getEmoji(i);
+    el.insertBefore(emojiEl, el.firstChild);
+    filled = i;
+    if (i < TOTAL) document.getElementById('stamp-' + (i + 1)).classList.remove('locked');
+    if (filled === TOTAL) setTimeout(() => document.getElementById('celebrate').classList.add('show'), 400);
+    updateUI();
+    saveState();
+  }
+
+  function removeStamp(i) {
+    const el = document.getElementById('stamp-' + i);
+    el.classList.remove('filled');
+    const emojiEl = el.querySelector('.emoji');
+    if (emojiEl) emojiEl.remove();
+    if (i < TOTAL) document.getElementById('stamp-' + (i + 1)).classList.add('locked');
+    filled = i - 1;
+    updateUI();
+    saveState();
+  }
+
+  function addStamp() {
+    if (filled < TOTAL) addStampAt(filled + 1);
+  }
+
+  function resetCard() {
+    if (!confirm('リセットしますか？')) return;
+    for (let i = 1; i <= TOTAL; i++) {
+      const el = document.getElementById('stamp-' + i);
+      el.classList.remove('filled');
+      const emojiEl = el.querySelector('.emoji');
+      if (emojiEl) emojiEl.remove();
+      if (i === 1) el.classList.remove('locked');
+      else         el.classList.add('locked');
+    }
+    filled = 0;
+    updateUI();
+    saveState();
+  }
+
+  function updateUI() {
+    document.getElementById('progressNum').textContent = filled + ' / ' + TOTAL;
+    document.getElementById('progressFill').style.width = (filled / TOTAL * 100) + '%';
+  }
+
+  function closeCelebrate() {
+    document.getElementById('celebrate').classList.remove('show');
+  }
+
+  // Auto-save name and reward on input
+  document.addEventListener('DOMContentLoaded', () => {
+    buildGrid();
+    loadState();
+    document.getElementById('nameInput').addEventListener('input', saveState);
+    document.getElementById('rewardInput').addEventListener('input', saveState);
+  });
+
+  // Register service worker
+  if ('serviceWorker' in navigator) {
+    navigator.serviceWorker.register('./sw.js').catch(() => {});
+  }
+</script>
+</body>
+</html>
