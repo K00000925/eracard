@@ -544,12 +544,17 @@
     const stamp = el.querySelector('.stamp');
     const emojiEl = document.createElement('span');
     emojiEl.className = 'emoji';
-    emojiEl.textContent = getEmoji(i);
+    const emoji = getEmoji(i);
+    emojiEl.textContent = emoji;
     stamp.appendChild(emojiEl);
     filled = i;
+    // 履歴に追加（直近3件まで）
+    history.push({ num: i, emoji: emoji, time: new Date().toISOString() });
+    if (history.length > 3) history.shift();
     if (i < TOTAL) document.getElementById('stamp-' + (i + 1)).classList.remove('locked');
     if (filled === TOTAL) setTimeout(() => document.getElementById('celebrate').classList.add('show'), 400);
     updateUI();
+    renderHistory();
     saveState();
   }
 
@@ -558,9 +563,12 @@
     el.classList.remove('filled');
     const emojiEl = el.querySelector('.emoji');
     if (emojiEl) emojiEl.remove();
+    // 履歴から最後の1件を削除
+    if (history.length > 0) history.pop();
     if (i < TOTAL) document.getElementById('stamp-' + (i + 1)).classList.add('locked');
     filled = i - 1;
     updateUI();
+    renderHistory();
     saveState();
   }
 
@@ -579,7 +587,9 @@
       else         el.classList.add('locked');
     }
     filled = 0;
+    history = [];
     updateUI();
+    renderHistory();
     saveState();
   }
 
