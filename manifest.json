@@ -1,6 +1,6 @@
 {
   "name": "えらポイントカード",
-  "short_name": "えらカード",
+  "short_name": "えらポ！",
   "description": "はたらくくるまのポイントカード",
   "start_url": "./index.html",
   "display": "standalone",
