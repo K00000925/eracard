@@ -257,8 +257,6 @@
     border-radius: 10px;
     padding: 8px 10px;
     background: rgba(0,0,0,0.15);
-    /* 常に3件分の高さを確保 */
-    min-height: 94px;
     display: flex;
     flex-direction: column;
   }
@@ -268,12 +266,14 @@
     color: rgba(255,255,255,0.6);
     letter-spacing: 1px;
     margin-bottom: 6px;
+    flex-shrink: 0;
   }
   .history-list {
-    flex: 1;
     display: flex;
     flex-direction: column;
-    gap: 4px;
+    gap: 6px;
+    /* 3件分の高さを固定: 1件=24px × 3 + gap=6px × 2 = 84px */
+    min-height: 84px;
   }
   .history-item {
     display: flex;
@@ -282,6 +282,8 @@
     font-size: 14px;
     font-weight: 700;
     color: rgba(255,255,255,0.8);
+    height: 24px;
+    flex-shrink: 0;
   }
   .history-item .h-emoji { font-size: 16px; }
   .history-item .h-num   { color: #fbbf24; min-width: 44px; }
@@ -291,7 +293,7 @@
     font-weight: 700;
     color: rgba(255,255,255,0.35);
     text-align: center;
-    padding: 8px 0;
+    padding: 28px 0;
   }
   .btn {
     border-radius: 99px; border: none;
