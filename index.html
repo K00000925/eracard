@@ -29,7 +29,15 @@
     padding: env(safe-area-inset-top, 0px) env(safe-area-inset-right, 0px) env(safe-area-inset-bottom, 0px) env(safe-area-inset-left, 0px);
   }
 
-  /* ── Save indicator ── */
+  /* ナビゲーションバー下の白を完全に塞ぐ */
+  body::after {
+    content: '';
+    position: fixed;
+    bottom: 0; left: 0; right: 0;
+    height: env(safe-area-inset-bottom, 40px);
+    background: #2d6be4;
+    z-index: 0;
+  }
   .save-toast {
     position: fixed;
     bottom: 24px;
@@ -52,7 +60,7 @@
   .card {
     flex: 1;
     width: 100%;
-    background: #fff;
+    background: #2d6be4;
     overflow-y: auto;
     display: flex;
     flex-direction: column;
@@ -162,7 +170,7 @@
     user-select: none;
   }
   .cell-num {
-    font-size: 11px;
+    font-size: 13px;
     font-weight: 900;
     color: #93a8d4;
     line-height: 1;
@@ -241,7 +249,7 @@
   .history {
     background: #2d6be4;
     padding: 10px 14px;
-    padding-bottom: max(10px, env(safe-area-inset-bottom));
+    padding-bottom: max(20px, env(safe-area-inset-bottom, 20px));
     flex-shrink: 0;
   }
   .history-box {
@@ -251,7 +259,7 @@
     background: rgba(0,0,0,0.15);
   }
   .history-title {
-    font-size: 10px;
+    font-size: 11px;
     font-weight: 900;
     color: rgba(255,255,255,0.6);
     letter-spacing: 1px;
@@ -266,15 +274,15 @@
     display: flex;
     align-items: center;
     gap: 6px;
-    font-size: 11px;
+    font-size: 12px;
     font-weight: 700;
     color: rgba(255,255,255,0.8);
   }
-  .history-item .h-emoji { font-size: 13px; }
-  .history-item .h-num   { color: #fbbf24; min-width: 36px; }
-  .history-item .h-time  { color: rgba(255,255,255,0.55); font-size: 10px; }
+  .history-item .h-emoji { font-size: 14px; }
+  .history-item .h-num   { color: #fbbf24; min-width: 40px; }
+  .history-item .h-time  { color: rgba(255,255,255,0.55); font-size: 11px; }
   .history-empty {
-    font-size: 10px;
+    font-size: 11px;
     font-weight: 700;
     color: rgba(255,255,255,0.35);
     text-align: center;
@@ -447,11 +455,13 @@
 
   function loadState() {
     try {
-      const savedFilled = parseInt(localStorage.getItem(KEY_FILLED) || '0');
-      const savedName   = localStorage.getItem(KEY_NAME)   || '';
-      const savedReward = localStorage.getItem(KEY_REWARD) || '';
+      const savedFilled  = parseInt(localStorage.getItem(KEY_FILLED) || '0');
+      const savedName    = localStorage.getItem(KEY_NAME)    || '';
+      const savedReward  = localStorage.getItem(KEY_REWARD)  || '';
+      const savedHistory = localStorage.getItem(KEY_HISTORY);
       document.getElementById('nameInput').value   = savedName;
       document.getElementById('rewardInput').value = savedReward;
+      if (savedHistory) history = JSON.parse(savedHistory);
       // restore stamps silently
       for (let i = 1; i <= savedFilled; i++) {
         const el = document.getElementById('stamp-' + i);
@@ -470,6 +480,7 @@
       }
       filled = savedFilled;
       updateUI();
+      renderHistory();
     } catch(e) {}
   }
 
