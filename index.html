@@ -148,7 +148,7 @@
 
   /* Grid — 10個ごとにグループ化 */
   .grid-section {
-    padding: 16px 10px 16px;
+    padding: 22px 10px 22px;
     display: flex; flex-direction: column;
     justify-content: flex-start;
     gap: 8px;
@@ -170,7 +170,7 @@
     user-select: none;
   }
   .cell-num {
-    font-size: 13px;
+    font-size: 15px;
     font-weight: 900;
     color: #93a8d4;
     line-height: 1;
@@ -209,7 +209,7 @@
   .stamp .emoji {
     position: absolute; top: 50%; left: 50%;
     transform: translate(-50%, -50%);
-    font-size: 26px; line-height: 1; pointer-events: none;
+    font-size: 32px; line-height: 1; pointer-events: none;
   }
 
   /* ── Footer ── */
@@ -239,17 +239,65 @@
     gap: 8px;
     justify-content: center;
     align-items: center;
-    padding: 10px 16px;
+    padding: 14px 16px;
     background: #2d6be4;
     border-bottom: 2px solid rgba(255,255,255,0.25);
     flex-shrink: 0;
   }
 
+  /* ── Road animation ── */
+  .road-section {
+    background: #2d6be4;
+    padding: 0 0;
+    padding-bottom: max(14px, env(safe-area-inset-bottom));
+    flex-shrink: 0;
+  }
+  .road {
+    position: relative;
+    height: 44px;
+    background: #374151;
+    overflow: hidden;
+    display: flex;
+    align-items: center;
+  }
+  .road-line {
+    position: absolute;
+    top: 50%; left: 0;
+    width: 200%; height: 4px; margin-top: -2px;
+    background: repeating-linear-gradient(
+      90deg,
+      #fff 0px, #fff 20px,
+      transparent 20px, transparent 40px
+    );
+    animation: road-scroll 0.6s linear infinite;
+    animation-play-state: paused;
+  }
+  @keyframes road-scroll {
+    from { transform: translateX(0); }
+    to   { transform: translateX(-40px); }
+  }
+  .road.running .road-line { animation-play-state: running; }
+
+  .road-car {
+    position: absolute;
+    left: -70px;
+    font-size: 50px;
+    line-height: 1;
+    top: 50%;
+    transform: translateY(-75%) scaleX(-1); /* 左向きに反転 */
+  }
+  .road.running .road-car {
+    animation: car-run 1.2s linear forwards;
+  }
+  @keyframes car-run {
+    from { left: -70px; }
+    to   { left: 110%; }
+  }
+
   /* ── History ── */
   .history {
     background: #2d6be4;
-    padding: 10px 14px;
-    padding-bottom: max(20px, env(safe-area-inset-bottom, 20px));
+    padding: 12px 14px 12px;
     flex-shrink: 0;
   }
   .history-box {
@@ -397,6 +445,13 @@
       </div>
     </div>
   </div>
+
+  <div class="road-section">
+    <div class="road" id="road">
+      <div class="road-line"></div>
+      <div class="road-car" id="roadCar">🚗</div>
+    </div>
+  </div>
 </div>
 
 <div class="celebrate" id="celebrate">
@@ -411,7 +466,7 @@
 <div class="save-toast" id="saveToast">💾 じどうほぞんしました</div>
 
 <script>
-  const vehicleEmojis = ['🚒','🚑','🚓','🚜','🏗️','🚛','🚌','🚂','🚁','🛻','🚧','🛳️','🚨','🛞','🚐','🏎️','🚜','🚑'];
+  const vehicleEmojis = ['🚗','🚕','🚙','🚌','🚎','🏎️','🚐','🚑','🚒','🚓','🚁','🚂','🚃','🚄','🚅','🚈','🚢','⛵','🚗','🚕','🚙','🚌','🚎','🏎️','🚐','🚑','🚒','🚓','🚁','🚂','🚃','🚄','🚅','🚈','🚢','⛵','🚗','🚕','🚙','🚌','🚎','🏎️','🚐','🚑','🚒','🚓','🚁','🚂','🚃','🚄'];
   const TOTAL = 50;
   const milestones = new Set([10, 20, 30, 40, 50]);
   let filled = 0;
@@ -545,6 +600,16 @@
     }
   }
 
+  function runCar(emoji) {
+    const road = document.getElementById('road');
+    const car  = document.getElementById('roadCar');
+    car.textContent = '🚗'; // 常に🚗
+    road.classList.remove('running');
+    void road.offsetWidth;
+    road.classList.add('running');
+    setTimeout(() => road.classList.remove('running'), 1300);
+  }
+
   function addStampAt(i) {
     const el = document.getElementById('stamp-' + i);
     el.classList.add('filled');
@@ -558,6 +623,8 @@
     // 履歴に追加（直近3件まで）
     history.push({ num: i, emoji: emoji, time: new Date().toISOString() });
     if (history.length > 3) history.shift();
+    // 車を走らせる
+    runCar(emoji);
     if (i < TOTAL) document.getElementById('stamp-' + (i + 1)).classList.remove('locked');
     if (filled === TOTAL) setTimeout(() => document.getElementById('celebrate').classList.add('show'), 400);
     updateUI();
