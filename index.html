@@ -579,9 +579,17 @@
     }
   }
 
+  // シャッフルデッキ — 全種類が均等に出る
+  let emojiDeck = [];
+  function shuffleDeck() {
+    emojiDeck = [...vehicleEmojis].sort(() => Math.random() - 0.5);
+  }
+  shuffleDeck();
+
   function getEmoji(i) {
     if (milestones.has(i)) return '⭐';
-    return vehicleEmojis[Math.floor(Math.random() * vehicleEmojis.length)];
+    if (emojiDeck.length === 0) shuffleDeck();
+    return emojiDeck.pop();
   }
 
   function handleClick(i) {
