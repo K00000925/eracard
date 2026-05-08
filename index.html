@@ -209,7 +209,7 @@
   .stamp .emoji {
     position: absolute; top: 50%; left: 50%;
     transform: translate(-50%, -50%);
-    font-size: 32px; line-height: 1; pointer-events: none;
+    font-size: 30px; line-height: 1; pointer-events: none;
   }
 
   /* ── Footer ── */
@@ -269,14 +269,12 @@
       #fff 0px, #fff 20px,
       transparent 20px, transparent 40px
     );
-    animation: road-scroll 0.6s linear infinite;
-    animation-play-state: paused;
+    animation: road-scroll 0.6s linear infinite; /* 常時スクロール */
   }
   @keyframes road-scroll {
     from { transform: translateX(0); }
     to   { transform: translateX(-40px); }
   }
-  .road.running .road-line { animation-play-state: running; }
 
   .road-car {
     position: absolute;
@@ -284,14 +282,16 @@
     font-size: 50px;
     line-height: 1;
     top: 50%;
-    transform: translateY(-75%) scaleX(-1); /* 左向きに反転 */
+    transform: translateY(-75%) scaleX(-1);
+    opacity: 0;
   }
   .road.running .road-car {
-    animation: car-run 1.2s linear forwards;
+    opacity: 1;
+    animation: car-run 1.4s linear forwards;
   }
   @keyframes car-run {
-    from { left: -70px; }
-    to   { left: 110%; }
+    0%   { left: -70px; transform: translateY(-75%) scaleX(-1); }
+    100% { left: 110%;  transform: translateY(-75%) scaleX(-1); }
   }
 
   /* ── History ── */
