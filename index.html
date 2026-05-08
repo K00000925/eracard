@@ -285,10 +285,6 @@
     transform: translateY(-75%) scaleX(-1);
     opacity: 0;
   }
-  .road.running .road-car {
-    opacity: 1;
-    animation: car-run 1.4s linear forwards;
-  }
   @keyframes car-run {
     0%   { left: -70px; transform: translateY(-75%) scaleX(-1); }
     100% { left: 110%;  transform: translateY(-75%) scaleX(-1); }
@@ -600,14 +596,23 @@
     }
   }
 
-  function runCar(emoji) {
-    const road = document.getElementById('road');
-    const car  = document.getElementById('roadCar');
-    car.textContent = '🚗'; // 常に🚗
-    road.classList.remove('running');
-    void road.offsetWidth;
-    road.classList.add('running');
-    setTimeout(() => road.classList.remove('running'), 1300);
+  let carTimer = null;
+  function runCar() {
+    const car = document.getElementById('roadCar');
+    car.textContent = '🚗';
+    // タイマーをリセット
+    if (carTimer) clearTimeout(carTimer);
+    // アニメーションをリセット
+    car.style.animation = 'none';
+    car.style.opacity = '1';
+    car.style.left = '-70px';
+    void car.offsetWidth; // reflow
+    car.style.animation = 'car-run 1.4s linear forwards';
+    carTimer = setTimeout(() => {
+      car.style.opacity = '0';
+      car.style.animation = 'none';
+      car.style.left = '-70px';
+    }, 1400);
   }
 
   function addStampAt(i) {

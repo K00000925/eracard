@@ -1,4 +1,4 @@
-const CACHE_NAME = 'eracard-v22';
+const CACHE_NAME = 'eracard-v23';
 const ASSETS = [
   './index.html',
   './manifest.json'
