@@ -209,7 +209,7 @@
   .stamp .emoji {
     position: absolute; top: 50%; left: 50%;
     transform: translate(-50%, -50%);
-    font-size: 30px; line-height: 1; pointer-events: none;
+    font-size: 26px; line-height: 1; pointer-events: none;
   }
 
   /* ── Footer ── */
@@ -585,7 +585,7 @@
 
   function getEmoji(i) {
     if (milestones.has(i)) return '⭐';
-    return vehicleEmojis[(i - 1) % vehicleEmojis.length];
+    return vehicleEmojis[Math.floor(Math.random() * vehicleEmojis.length)];
   }
 
   function handleClick(i) {
